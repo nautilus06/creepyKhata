@@ -24,7 +24,12 @@ public class showNotification {
 //                new Intent(context, LoginActivity.class), 0);
         Intent intent = new Intent(context, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pIntent = PendingIntent.getActivity(context, 0, intent, 0);
+        PendingIntent pIntent;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            pIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        } else {
+            pIntent = PendingIntent.getActivity(context, 0, intent, 0);
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = context.getString(R.string.channel_name);

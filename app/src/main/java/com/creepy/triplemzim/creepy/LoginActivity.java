@@ -1,5 +1,6 @@
 package com.creepy.triplemzim.creepy;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
@@ -38,6 +39,13 @@ import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.iftalab.runtimepermission.DangerousPermission;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -121,9 +129,10 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
 
-        // Set up the login form.
-//        mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
-//        populateAutoComplete();
+        askForPermissions();
+    }
+
+    private void initialize(){
         try {
             PackageInfo packageInfo = this.getPackageManager().getPackageInfo(getPackageName(), 0);
             version = packageInfo.versionName;
@@ -140,22 +149,19 @@ public class LoginActivity extends AppCompatActivity {
         context = this;
         updateAll();
 
-        aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                if(aSwitch.isChecked()){
-                    autoCheck = true;
-                    editor.putString("autoCheck","true");
-                    findViewById(R.id.tvAutoStart).setVisibility(View.VISIBLE);
-                }
-                else{
-                    autoCheck = false;
-                    editor.putString("autoCheck","false");
-                    findViewById(R.id.tvAutoStart).setVisibility(View.GONE);
-//                    dispatcher.cancelAll();
-                }
-                editor.commit();
+        aSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
+            if(aSwitch.isChecked()){
+                autoCheck = true;
+                editor.putString("autoCheck","true");
+                findViewById(R.id.tvAutoStart).setVisibility(View.VISIBLE);
             }
+            else{
+                autoCheck = false;
+                editor.putString("autoCheck","false");
+                findViewById(R.id.tvAutoStart).setVisibility(View.GONE);
+//                    dispatcher.cancelAll();
+            }
+            editor.commit();
         });
 
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -184,8 +190,36 @@ public class LoginActivity extends AppCompatActivity {
 
         Intent backgroundService = new Intent(getApplicationContext(), KeepAliveService.class);
         startService(backgroundService);
-
     }
+
+    private void askForPermissions(){
+         Dexter.withActivity(this)
+                    .withPermissions(
+                            Manifest.permission.RECEIVE_BOOT_COMPLETED,
+                            Manifest.permission.GET_ACCOUNTS,
+                            Manifest.permission.INTERNET,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.ACCESS_WIFI_STATE,
+                            Manifest.permission.ACCESS_NETWORK_STATE,
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                    .withListener(new MultiplePermissionsListener() {
+                        @Override
+                        public void onPermissionsChecked(MultiplePermissionsReport multiplePermissionsReport) {
+                            if (multiplePermissionsReport.areAllPermissionsGranted()) {
+                                initialize();
+                            }
+                        }
+
+                        @Override
+                        public void onPermissionRationaleShouldBeShown(List<PermissionRequest> list, PermissionToken permissionToken) {
+
+                        }
+                    })
+                    .check();
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
